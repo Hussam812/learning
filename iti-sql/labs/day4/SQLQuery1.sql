@@ -66,11 +66,12 @@ WHERE ESSN IS NULL
 --6.	For each department-- if its average salary is less than the average salary of all employees-- display its number, name and number of its employees.
 SELECT  Dname AS 'Nanme'
 ,AVG(ISNULL(Salary, 0)) AS ' AVG Salary'
-,COUNT(SSN) AS 'Count'
+,COUNT(Dno) AS 'Count'
 FROM Employee, Departments
 WHERE Dnum = Dno
 GROUP BY Dname
 HAVING AVG(Salary) < (SELECT AVG(ISNULL(salary,0)) FROM Employee)
+select dnum,dname,count(ssn)from Departments inner join Employee on dno=Dnum group by dnum, dname having avg(salary)<(select avg (salary) from Employee)
 
 --7.	Retrieve a list of employees and the projects they are working on ordered by department and within each department, ordered alphabetically by last name, first name.
 
@@ -83,6 +84,12 @@ INNER JOIN Employee e
 ON D.Dnum = e.Dno 
 ORDER BY Dno, Lname, Fname
 --8.	Try to get the max 2 salaries using subquery
+select max(salary)
+from Employee
+union
+select max(salary) 
+from Employee
+where Salary<(select max(salary) from employee)
 
 SELECT ToP(2)Salary
 FROM Employee
@@ -92,21 +99,34 @@ ORDER BY 1 desc
 
 
 SELECT CONCAT(Fname, '', Lname) AS 'Full Name'
-FROM Employee , Dependent
-WHERE SSN = ESSN AND CONCAT(Fname, ' ', Lname) like Dependent_name 
-
-
-
+FROM Employee 
+INTERSECT
+SELECT Dependent_name 
+FROM Dependent
 --10.	Try to update all salaries of employees who work in Project ‘Al Rabwah’ by 30% 
 
 UPDATE Employee
 SET Salary =  Salary * 1.3
-WHERE 
+where SSN IN (SELECT ESSN 
+				FROM Works_for inner join project 
+				on pno=pnumber and Pname='Al Rabwah')
 --11.	Display the employee number and name if at least one of them have dependents (use exists keyword) self-study.
 
+
+select ssn ,CONCAT(fname,' ',lname) 
+from Employee 
+where exists (select essn from Dependent);
+
+select * from Departments
 --DML
 
 --1.	In the department table insert new department called "DEPT IT" , with id 100, employee with SSN = 112233 as a manager for this department. The start date for this manager is '1-11-2006'
+
+
+insert 
+into Departments(Dname,Dnum,MGRSSN,[MGRStart Date])
+values('DEPT IT',100,112233,1-11-2006);
+
 
 /*2.	Do what is required if you know that : Mrs.Noha Mohamed(SSN=968574)  moved to be the manager of the new department (id = 100), and they give you(your SSN =102672) her position (Dept. 20 manager) 
 
@@ -115,6 +135,23 @@ b.	Update your record to be department 20 manager.
 c.	Update the data of employee number=102660 to be in your teamwork (he will be supervised by you) (your SSN =102672)
 */
 
+update Departments set MGRSSN =968574 where dnum=100;
+
+update Departments set MGRSSN =102672 where dnum=20;
+
+update Employee set Superssn=102672 where ssn=102660;
+
+
 --3.	Unfortunately the company ended the contract with Mr. Kamel Mohamed (SSN=223344) so try to delete his data from your database in case you know that you will be temporarily in his position.
 --Hint: (Check if Mr. Kamel has dependents, works as a department manager, supervises any employees or works in any projects and handle these cases).
+
+delete Dependent where ESSN=223344
+delete Works_for where ESSN=223344
+
+update Departments set MGRSSN=102672 where MGRSSN=223344;
+
+update Employee set Superssn = 102672  where Superssn=223344;
+
+delete Employee where SSN=223344
+
 
